@@ -33,22 +33,11 @@ func main()  {
 	// Initialize application
 	app := &application{logger: logger}
 
-	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir(cfg.staticDir))
-
-	// Handlers
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("GET /{$}", app.home)
-	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
-	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
-	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
-
 	// Logger
 	logger.Info("starting server on: ", slog.String("addr ", cfg.addr), slog.String("static", cfg.staticDir))
 
 	// Error handler
-	err := http.ListenAndServe(cfg.addr, mux)
+	err := http.ListenAndServe(cfg.addr, app.routes(cfg.staticDir) )
 	logger.Error(err.Error())
 	os.Exit(1)
 }
