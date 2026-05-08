@@ -1,23 +1,43 @@
 package main
 
 import (
-	"log"
+	"flag"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
+type application struct {
+	logger *slog.Logger
+}
+
+type config struct {
+	addr string
+	staticDir string
+}
+
 func main()  {
-	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	var cfg config
 
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
+	// Command-line arguments
+	flag.StringVar(&cfg.addr ,"addr", ":4000", "HTTP network address")
+	flag.StringVar(&cfg.staticDir, "staticDir", "./ui/static/", "Static directory path")
+	flag.Parse();
 
-	mux.HandleFunc("GET /{$}", home)
-	mux.HandleFunc("GET /snippet/view/{id}", snippetView)
-	mux.HandleFunc("GET /snippet/create", snippetCreate)
-	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
+	// Logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+		AddSource: true,
+	}))
 
-	log.Print("starting server on: 4000")
+	// Initialize application
+	app := &application{logger: logger}
 
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
+	// Logger
+	logger.Info("starting server on: ", slog.String("addr ", cfg.addr), slog.String("static", cfg.staticDir))
+
+	// Error handler
+	err := http.ListenAndServe(cfg.addr, app.routes(cfg.staticDir) )
+	logger.Error(err.Error())
+	os.Exit(1)
 }
