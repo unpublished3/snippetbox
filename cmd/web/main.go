@@ -19,6 +19,7 @@ type application struct {
 type config struct {
 	addr string
 	staticDir string
+	dsn string
 }
 
 func main()  {
@@ -27,6 +28,8 @@ func main()  {
 	// Command-line arguments
 	flag.StringVar(&cfg.addr ,"addr", ":4000", "HTTP network address")
 	flag.StringVar(&cfg.staticDir, "staticDir", "./ui/static/", "Static directory path")
+	flag.StringVar(&cfg.dsn, "dsn", "web:pass@/snippetbox?parseTime=true", "Mariadb data source name")
+
 	flag.Parse();
 
 	// Logger
@@ -36,9 +39,7 @@ func main()  {
 	}))
 
 		// Database
-	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "Mariadb data source name")
-
-	db, err := openDB(*dsn)
+	db, err := openDB(cfg.dsn)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
